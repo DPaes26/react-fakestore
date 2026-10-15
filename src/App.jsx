@@ -7,13 +7,14 @@ const App = () => {
   // 1. Guarda todos os produtos que vêm da API
   const [produtos, setProdutos] = useState([]);
   // 2. Guarda qual é a categoria que o cliente quer ver (começa em "All" para mostrar tudo)
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState("All");//guarda o filtro atual
+  const [produtosFiltrados, setProdutosFiltrados] = useState([]);//guarda o filtro atual
 
   function buscarProdutos() {
     fetch("https://fakestoreapi.com/products") //Vai buscar a lista de 20 produtos à internet (à Fake Store API).
       .then((response) => { return response.json() }) //Quando a resposta chega, convertemos esses dados para formato JSON (dados legíveis em JavaScript).
       .then((response) => {
         setProdutos(response)//Pegamos nessa lista completa de produtos e guardamos dentro do nosso estado produtos.
+        setProdutosFiltrados(response);
       })
   }
 
@@ -22,16 +23,43 @@ const App = () => {
   // categoria no menu, essa categoria chega aqui como argumento.
   function filtrarProdutos(categoria) {
     console.log(categoria);
-    setCategoriaSelecionada(categoria); //Em vez de mexermos diretamente nos produtos (o que destruía a lista original), nós apenas guardamos na memória qual foi a categoria em que o utilizador clicou.
+    if (categoria != "All") {
+      let produtosFiltrados = produtos.filter((produto) => {
+        return produto.category == categoria.toLowerCase();
+      });
+      setProdutosFiltrados(produtosFiltrados);
+    } else {
+      setProdutosFiltrados(produtos);
+    }
+  }
 
-    // if (categoria != "All") {
-    //     let produtosFiltrados = produtos.filter((produto) => {
-    //         return produto.category == categoria;
-    //     });
-    //     setProdutos(produtosFiltrados);
-    // } else {
-    //     setProdutos(produtos);
-    // }
+  function ordenarProdutos(ordem) {
+    console.log(ordem);
+    let produtosOrdenados = [];
+    if (ordem == "preco") {
+      produtosOrdenados = produtos.toSorted((prodA, prodB) => {
+        return prodA.price - prodB.price;
+      });
+    } else {
+      produtosOrdenados = produtos.toSorted((prodA, prodB) => {
+        return prodB.rating.rate - prodA.rating.rate;
+      });
+    };
+    setProdutosFiltrados(produtosOrdenados);
+  }
+
+  function pesquisarProdutos(texto) {
+
+    if (texto.length == 0) {
+      setProdutosFiltrados(produtos);
+      return;
+    }
+    if (texto.length >= 3) {
+      let produtosEncontrados = produtos.filter((produto) => {
+        return produto.title.toLowerCase().includes(texto.toLowerCase());
+      });
+      setProdutosFiltrados(produtosEncontrados);
+    }
   }
 
   useEffect(() => { //Diz ao React: "assim que a página carregar e for desenhada no ecrã pela primeira vez, executa o que está aqui dentro".
@@ -40,23 +68,19 @@ const App = () => {
 
 
 
-  let produtosFiltrados = [];//Criamos uma gaveta temporária para guardar os produtos que vão ser mostrados.
 
-  if (categoriaSelecionada === "All") {//Se o utilizador escolheu ver tudo ("All"), a nossa gaveta recebe todos os produtos originais (produtos).
-    produtosFiltrados = produtos;
-  } else {//Senão, usamos o método .filter() do JavaScript no array original produtos.  Ele percorre cada produto e guarda na gaveta apenas aqueles cuja produto.category é igual à categoriaSelecionada.
-    produtosFiltrados = produtos.filter((produto) => {
-      return produto.category == categoriaSelecionada;
-    });
-  }
 
 
   return ( //A Renderização
 
     <>
-      <Header filtrarProdutos={filtrarProdutos} />
-      <main className="p-15 bg-slate-200">
-        <div className="grid grid-cols-4 gap-4">
+      <Header
+        filtrarProdutos={filtrarProdutos}
+        ordenarProdutos={ordenarProdutos}
+        pesquisarProdutos={pesquisarProdutos}
+      />
+      <main className="p-4 lg:p-15 bg-slate-200 ">
+        <div className="grid lg:grid-cols-4 gap-4">
           {
             produtosFiltrados.map((produto) => (
               <Card
